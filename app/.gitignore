@@ -1,0 +1,4 @@
+models/
+llama.cpp/
+chatHistory.json
+node_modules/

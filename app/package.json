@@ -1,0 +1,39 @@
+{
+  "name": "_localAi",
+  "version": "1.0.0",
+  "description": "1. что такое rest-api(4 запроса) - ✓\r 2. покаком у протоколу работает rest-api, из каких частей он состоит и тд и тп - ✓\r 3. история сессий слева в браузере подсасывание сесии по клику - ✓",
+  "main": "index.js",
+  "scripts": {
+    "start": "node app/src/chat4.js",
+    "dev": "node --watch app/src/chat4.js",
+    "generate": "flatc --js --js-module -o app/src/generated schemas/schema.fbs",
+    "generate:cpp": "flatc --cpp -o cpp_server/generated schemas/schema.fbs",
+    "generate:all": "npm run generate && npm run generate:cpp",
+    "clean": "rm -rf app/src/generated/* cpp_server/generated/*"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "better-sqlite3": "^12.10.0",
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "flatbuffers": "^24.12.23",
+    "winston": "^3.19.0",
+    "winston-daily-rotate-file": "^5.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dyezer09/local-ai.git"
+  },
+  "bugs": {
+    "url": "https://github.com/dyezer09/local-ai/issues"
+  },
+  "homepage": "https://github.com/dyezer09/local-ai#readme",
+  "devDependencies": {
+    "@types/node": "^26.1.1",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.23.1"
+  }
+}

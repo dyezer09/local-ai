@@ -1,0 +1,25 @@
+
+namespace VectorDB;
+
+enum RecordType : uint32 {
+    CHAT = 1, // 
+    BOOK = 2
+}
+
+table Document {
+    id: int32;
+    values: [float];
+    record_type: RecordType = CHAT;
+    chat_id: string;
+    message_id: string;
+    book_id: string;
+    chunk_index: int32;
+}
+
+table Storage {
+    documents: [Document];
+}
+
+root_type Storage;
+
+
