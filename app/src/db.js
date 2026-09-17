@@ -10,7 +10,7 @@ const db = new Database(dbPath);
 
 db.pragma('foreign_keys = ON');
 
-//табло 1 - Сессии (общая информация о чатах)
+//табло 1 - Сессии и общая информация о чатах
 db.exec(`
   CREATE TABLE IF NOT EXISTS sessions (
     id TEXT PRIMARY KEY,               -- Уникальный ID чата (UUID)
@@ -20,7 +20,7 @@ db.exec(`
   )
 `);
 
-//табло 2 - Сообщения (все реплики с поддержкой ветвления)
+//табло 2 - Сообщения 
 db.exec(`
   CREATE TABLE IF NOT EXISTS messages (
     id INTEGER PRIMARY KEY AUTOINCREMENT, -- Уникальный числовой ID сообщения
@@ -36,7 +36,7 @@ db.exec(`
   )
 `);
 
-//читает все сессии (названия и время создания)
+//читает все сессии 
 export function getAllChats() {
   const stmt = db.prepare(`
     SELECT id, title, system_prompt, created_at 
@@ -57,7 +57,7 @@ export function getChatMessages(chatId) {
   return stmt.all(chatId);
 }
 
-//добавление сообщения в датабазу
+//добавление сообщения в дб
 export function addMessageToChat(chatId, role, content, parentId = null, ragContext = null) {
   const insertStmt = db.prepare(`
     INSERT INTO messages (session_id, parent_id, role, clean_content, rag_context)

@@ -10,9 +10,7 @@ namespace TextReceiver {
 
 namespace fs = std::filesystem;
 
-// ============================================================
 // ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ДЛЯ РАБОТЫ С ФАЙЛАМИ
-// ============================================================
 
 bool fileExists(const std::string& filename) {
     return fs::exists(filename);
@@ -60,9 +58,7 @@ bool writeBinaryFile(const std::string& filename, const std::vector<uint8_t>& da
     return true;
 }
 
-// ============================================================
 // ПАРСИНГ FLATBUFFERS
-// ============================================================
 
 bool parseFlatBuffersFromBuffer(const std::vector<uint8_t>& buffer, StorageData& storage) {
     std::string error_msg;
@@ -137,9 +133,9 @@ bool parseFlatBuffersFromBuffer(const std::vector<uint8_t>& buffer, StorageData&
     return true;
 }
 
-// ============================================================
+
 // ЧТЕНИЕ ИЗ ФАЙЛА
-// ============================================================
+
 
 bool readFlatBuffersFromFile(const std::string& filename, StorageData& storage) {
     std::string error_msg;
@@ -165,9 +161,7 @@ bool readFlatBuffersFromFile(const std::string& filename, StorageData& storage, 
     return parseFlatBuffersFromBuffer(buffer, storage, error_msg);
 }
 
-// ============================================================
 // ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
-// ============================================================
 
 std::string recordTypeToString(VectorDB::RecordType type) {
     switch (type) {

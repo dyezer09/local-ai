@@ -1,49 +1,21 @@
-# === Специфичные папки этого приложения ===
-# Модели (веса ИИ, локальные LLM, файлы моделей)
-models/
-.models/
-weights/
-*.onnx
-*.bin
-*.pt
-*.pth
-*.gguf
-
-# Чаты (история диалогов, базы данных переписок, кэш)
-chats/
-chat_history/
-conversations/
-*.jsonl
-
-# Логи (файлы журналов и отчетов)
-logs/
-*.log
-npm-debug.log*
-yarn-debug.log*
-pnpm-debug.log*
-
-# === Стандартные исключения ===
-# Зависимости и пакеты
-node_modules/
-.venv/
-venv/
-env/
-__pycache__/
-*.pyc
-
-# Окружение и секреты (токены, пароли)
-.env
-.env.*
-*.env
-
-# Сборка и временные файлы
-dist/
+# === Сборка C++ (CMake) ===
 build/
-.cache/
-tmp/
+Build/
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+*.so
+*.tgz
+*.bin
 
-# Настройки систем и IDE
-.DS_Store
-Thumbs.db
+
+models/
+data/
+
+
 .vscode/
 .idea/
+.DS_Store
+Thumbs.db

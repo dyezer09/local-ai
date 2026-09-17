@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat</title>
+    <link rel="stylesheet" href="/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Сайдбар -->
+        <aside id="sidebar">
+            <div id="sidebar-header">
+                <h3>Чаты</h3>
+                <button id="newChatBtn">+</button>
+            </div>
+            <input type="text" id="chatSearch" placeholder="Поиск...">
+            <div id="chatList"></div>
+        </aside>
+
+        <!-- Основная область -->
+        <main id="main">
+            <header id="chatHeader">
+                <button id="toggleSidebar">☰</button>
+                <h2 id="chatTitle">Выберите чат</h2>
+                <button id="systemPromptBtn">⚙</button>
+                <button id="deleteChatBtn">🗑</button>
+            </header>
+
+            <div id="messages">
+                <div id="welcome">Выберите чат или создайте новый</div>
+            </div>
+
+            <footer id="inputArea">
+                <textarea id="messageInput" placeholder="Сообщение..." rows="1"></textarea>
+                <button id="sendBtn" disabled>→</button>
+            </footer>
+        </main>
+    </div>
+
+    <!-- Модалка системного промпта -->
+    <div id="promptModal" class="modal">
+        <div class="modal-content">
+            <h3>Системный промпт</h3>
+            <textarea id="promptInput" rows="10"></textarea>
+            <div class="modal-actions">
+                <button id="promptCancel">Отмена</button>
+                <button id="promptSave">Сохранить</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

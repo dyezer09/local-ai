@@ -167,10 +167,13 @@ std::expected<void, std::string> StorageManager::load_from_file(std::string_view
             if (!doc_fb || !doc_fb->values()) continue;  // битый документ пропускаем
             
             // проверяем размерность на первом элементе
-            if (i == 0 && doc_fb->values()->size() != dimensions) {
-                std::cerr << "[ERROR] Dimension mismatch! Expected: " << dimensions 
-                          << ", got: " << doc_fb->values()->size() << std::endl;
-                return std::unexpected("Конфликт размерностей во FlatBuffers файле.");
+            if (i == 0) {
+                size_t file_dims = doc_fb->values()->size();
+                    if (dimensions != file_dims) {
+                        std::cerr << "[DEBUG] Adjusting StorageManager dimensions from " 
+                        << dimensions << " to " << file_dims << " (based on file data)" << std::endl;
+                        dimensions = file_dims; // Меняем размерность на лету!
+                }
             }
             
             // копируем данные из flatbuffer в обычные структуры

@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { addBook, addChunksBatch, deleteBook, db } from './booksDb.js';
+import { addBook, addChunksBatch, deleteBook, db } from './booksDB.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -72,9 +72,7 @@ async function sendBatch(batch, bookId) {
 }
 
 async function processBook() {
-    console.log('╔══════════════════════════════════════════════╗');
-    console.log('║         📖 ОБРАБОТЧИК КНИГИ                  ║');
-    console.log('╚══════════════════════════════════════════════╝\n');
+    console.log('обработка книги');
     
     if (!fs.existsSync(BOOK_FILE)) { // проверка наличия файла
         console.log(`❌ Файл не найден: ${BOOK_FILE}`);
@@ -83,13 +81,11 @@ async function processBook() {
     }
     
     const stat = fs.statSync(BOOK_FILE);
-    console.log(`✅ Файл: ${BOOK_FILE} (${(stat.size / 1024).toFixed(1)} КБ)\n`);
+    console.log(` Файл: ${BOOK_FILE} (${(stat.size / 1024).toFixed(1)} КБ)\n`);
     
-    console.log('📖 Чтение...');
     const text = fs.readFileSync(BOOK_FILE, 'utf-8'); // читаем весь текст
     console.log(`   Символов: ${text.length.toLocaleString()}\n`);
     
-    console.log(`✂️  Нарезка (${CHUNK_TOKENS} токенов, перекрытие ${OVERLAP_TOKENS})...`);
     const chunks = splitIntoChunks(text); // режем на чанки
     console.log(`   Чанков: ${chunks.length}\n`);
     
@@ -99,7 +95,7 @@ async function processBook() {
     const existing = db.prepare('SELECT id FROM books WHERE title = ?').get(bookTitle);
     if (existing) {
         deleteBook(existing.id); // удаление предыдущей версии
-        console.log(`🗑️  Старая книга "${bookTitle}" удалена\n`);
+        console.log(` Старая книга "${bookTitle}" удалена\n`);
     }
     
     // сохраняем новую книгу в sqlite
@@ -113,14 +109,14 @@ async function processBook() {
         chapter: null
     }));
     addChunksBatch(dbChunks); // вставка чанков
-    console.log(`💾 ${chunks.length} чанков сохранено в books.db\n`);
+    console.log(` ${chunks.length} чанков сохранено в books.db\n`);
     
     // отправляем в c++ сервис для векторизации
     const totalBatches = Math.ceil(chunks.length / BATCH_SIZE); // всего чанков
     let success = 0;
     let fail = 0;
     
-    console.log(`🚀 Отправка в C++ (${totalBatches} батчей по ${BATCH_SIZE})...\n`);
+    console.log(` Отправдено (${totalBatches} батчей по ${BATCH_SIZE})\n`);
     
     for (let i = 0; i < chunks.length; i += BATCH_SIZE) { // отправляем чанки
         const batch = chunks.slice(i, i + BATCH_SIZE);
@@ -129,10 +125,10 @@ async function processBook() {
         try {
             const result = await sendBatch(batch, bookId); // отправка одного чанка
             success += batch.length;
-            console.log(`   ✅ Батч ${batchNum}/${totalBatches} — ${batch.length} чанков (всего в БД C++: ${result.total_in_db})`);
+            console.log(`    Батч ${batchNum}/${totalBatches} — ${batch.length} чанков (всего в БД C++: ${result.total_in_db})`);
         } catch (err) {
             fail += batch.length;
-            console.log(`   ❌ Батч ${batchNum}/${totalBatches} — ${err.message}`);
+            console.log(`    Батч ${batchNum}/${totalBatches} — ${err.message}`);
         }
         
         if (i + BATCH_SIZE < chunks.length) {
@@ -140,12 +136,9 @@ async function processBook() {
         }
     }
     
-    console.log(`\n╔══════════════════════════════════════════════╗`);
-    console.log(`║  ✅ Готово!                                   ║`);
-    console.log(`║  Книга ID: ${String(bookId).padEnd(34)}║`);
-    console.log(`║  Успешно: ${String(success).padEnd(34)}║`);
+
+    console.log(`  Книга ID: ${String(bookId).padEnd(34)}`);
     if (fail > 0) console.log(`║  Ошибок:  ${String(fail).padEnd(34)}║`);
-    console.log(`╚══════════════════════════════════════════════╝\n`);
     
     db.close(); // закрываем соединение с бд
 }

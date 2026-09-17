@@ -1,15 +1,14 @@
 import express from 'express';
-import fs from 'fs';
+//import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 import { fileURLToPath } from 'url';
-import fsp from 'fs/promises';
+//import fsp from 'fs/promises';
 import Database from 'better-sqlite3';
 import flatbuffers from 'flatbuffers';
 import { VectorDB } from '../generated/schema.js';
 import { getAllChats, getChatMessages, deleteChatFromDB, createChatInDB, addMessageToChat, updateSystemPrompt } from './db.js';
 
-// импортируем логгеры
 import { logger, dbLogger, llamaLogger, httpLogger } from './logger.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -21,7 +20,10 @@ const PORT = 3000;
 const url = 'http://192.168.0.101:8090/v1/chat/completions';
 
 app.use(express.json());
-app.use(express.static(path.join(__dirname)));
+/*app.use(express.static(path.join(__dirname)));
+app.use('/bootstrap', express.static(path.join(__dirname, '../node_modules/bootstrap/dist')));// временно*/
+app.use(express.static(path.join(__dirname, '../public')));
+app.use('/bootstrap', express.static(path.join(__dirname, 'node_modules/bootstrap/dist')));
 
 const dbPath = path.resolve(__dirname, '../db/chats_storage.db');
 const db = new Database(dbPath);
@@ -36,7 +38,7 @@ logger.info('Databases connected', {
     booksDb: booksDbPath
 });
 
-// Middleware для логирования всех http-запросов
+//  логирования всех http-запросов
 app.use((req, res, next) => {
   const start = Date.now();
   
@@ -352,96 +354,43 @@ const getBookChunk = (bookId, chunkIndex) => {
 
 //отправка текстов напрямую в C++ сервер
 async function sendTextsToCpp(chatId, messageId, userMessage, aiResponse) {
-    const builder = new flatbuffers.Builder(4096);
+    const cppServerUrl = 'http://localhost:8081/receive_texts';
     
-    // Создаем строки
-    const chatIdOffset = builder.createString(String(chatId));
-    const messageIdOffset = builder.createString(String(messageId));
-    
-    // Получаем эмбеддинги (заглушка)
-    const userEmbedding = getEmbedding(userMessage);
-    const aiEmbedding = getEmbedding(aiResponse);
-    
-    // Создаем документы
-    const userDoc = createDocument(
-        builder,
-        messageId + '_user',
-        userEmbedding,
-        VectorDB.RecordType.CHAT,
-        String(chatId),
-        String(messageId),
-        '',
-        0
-    );
-    
-    const aiDoc = createDocument(
-        builder,
-        messageId + '_ai',
-        aiEmbedding,
-        VectorDB.RecordType.CHAT,
-        String(chatId),
-        String(messageId),
-        '',
-        0
-    );
-    
-    // Создаем вектор документов
-    const documentsOffset = VectorDB.Storage.createDocumentsVector(
-        builder,
-        [userDoc, aiDoc]
-    );
-    
-    // Строим Storage
-    VectorDB.Storage.startStorage(builder);
-    VectorDB.Storage.addDocuments(builder, documentsOffset);
-    const storage = VectorDB.Storage.endStorage(builder);
-    
-    builder.finish(storage);
-    
-    const buffer = builder.asUint8Array();
-    
-    // запись в файл
-    const filePath = path.join(__dirname, '../../data/chat_data.bin');
-    const tempPath = filePath + '.tmp';
-    const readyPath = filePath + '.ready';
-    
-    // Создаем директорию если её нет
-    const dir = path.dirname(filePath);
-    if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir, { recursive: true });
-    }
-    
-    // Атомарная запись: сначала во временный файл
-    fs.writeFileSync(tempPath, Buffer.from(buffer));
-    // Переименовываем (атомарная операция)
-    fs.renameSync(tempPath, filePath);
-    // Создаем файл-индикатор, что данные готовы
-    fs.writeFileSync(readyPath, Date.now().toString());
-    
+    // Формируем массив текстов (сначала user, потом ai)
+    const payload = {
+        chat_id: String(chatId),
+        message_id: String(messageId),
+        timestamp: new Date().toISOString(),
+        texts: [userMessage, aiResponse]
+    };
+
     console.log('\n' + '════════════════════════════════════════════════════════════');
-    console.log('📡 C++ ОТПРАВКА: FlatBuffers через файл');
+    console.log('➡️ C++ ОТПРАВКА: Отправка текстов на векторизацию по HTTP');
     console.log('════════════════════════════════════════════════════════════');
-    console.log(`📤 Данные записаны в файл: ${filePath}`);
-    console.log(`   Размер: ${buffer.length} байт`);
-    console.log(`   Chat ID: ${chatId}`);
-    console.log(`   Message ID: ${messageId}`);
-    console.log(`   Документов: 2 (user + ai)`);
-    console.log(`   Файл-индикатор: ${readyPath}`);
-    console.log('────────────────────────────────────────────────────────────');
 
     try {
+        const response = await fetch(cppServerUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
         
-        console.log('✅ Файл успешно записан, C++ может его читать');
+        const result = await response.json();
+        
+        if (result.status === 'success') {
+            console.log('✅ Тексты успешно векторизованы и сохранены в C++ БД');
+            console.log(`   Добавлено векторов: ${result.vectors_added}`);
+            console.log(`   Всего в БД: ${result.total_in_db}`);
+        } else {
+            console.log('⚠️ Ошибка C++ сервера:', result.message);
+        }
         console.log('════════════════════════════════════════════════════════════\n');
-        
-        return { success: true, filePath };
-        
+        return result;
     } catch (error) {
-        console.error('❌ ОШИБКА:', error.message);
+        console.error('⚠️ ОШИБКА подключения к C++ серверу при отправке:', error.message);
         return null;
     }
 }
-
 // функция создания документа
 function createDocument(builder, id, values, recordType, chatId, messageId, bookId, chunkIndex) {
     const idOffset = builder.createString(String(id));
@@ -502,8 +451,8 @@ async function searchSimilarMessages(text, topK = 3) {
         if (result.status === 'success') {
             console.log('✅ Найдены похожие:');
             
-            const filtered = result.results.filter(r => r.similarity < 0.999);
-            
+            //const filtered = result.results.filter(r => r.similarity < 0.999);
+            const filtered = result.results;
             for (let i = 0; i < Math.min(filtered.length, topK); i++) {
                 const r = filtered[i];
                 const recordType = r.record_type;
@@ -523,10 +472,10 @@ async function searchSimilarMessages(text, topK = 3) {
                     
                     if (foundMsg) {
                         const role = foundMsg.role === 'user' ? '👤' : '🤖';
-                        const preview = foundMsg.clean_content.substring(0, 100);
-                        console.log(`      ${role} "${preview}${foundMsg.clean_content.length > 100 ? '...' : ''}"`);
+                        const fullContent = foundMsg.clean_content;
+                        console.log(`   ${i + 1}. [${r.similarity.toFixed(3)}] ${role} ${fullContent}`);
                     } else {
-                        console.log(`      [текст не найден в chats_storage.db]`);
+                        console.log(`   ${i + 1}. [${r.similarity.toFixed(3)}] Chat: ${r.chat_id} | Msg: ${cleanMessageId} | [текст не найден]`);
                     }
                     
                 } else if (recordType === 2) {
@@ -665,54 +614,13 @@ app.post('/api/chat/:id/message', async (req, res) => {
         const userMessageId = saveAIResponse(chatId, aiResponse);
 
         // отправляем тексты с метаданными в C++ сервер (асинхронно)
-        sendTextsToCpp(chatId, userMessageId, message, aiResponse);
+        await sendTextsToCpp(chatId, userMessageId, message, aiResponse);
 
         // ищем похожие сообщения для контекста
         const similarResults = await searchSimilarMessages(message, 3);
 
-        // если нашли похожие — выводим их в консоль
-        if (similarResults && similarResults.results && similarResults.results.length > 0) {
-            console.log('\n📋 ПОХОЖИЕ СООБЩЕНИЯ ДЛЯ КОНТЕКСТА:');
-            for (let i = 0; i < similarResults.results.length; i++) {
-                const r = similarResults.results[i];
-                const recordType = r.record_type;
-                
-                if (recordType === 1) {
-                    // ─── ЧАТ ───────────────────────────────────
-                    const cleanMessageId = String(r.message_id).replace(/_ai$/, '').replace(/_user$/, '');
-                    
-                    let foundMsg = null;
-                    const chatMessages = getChatMessages(r.chat_id);
-                    if (chatMessages) {
-                        foundMsg = chatMessages.find(m => String(m.id) === cleanMessageId);
-                    }
-                    
-                    if (foundMsg) {
-                        const role = foundMsg.role === 'user' ? '👤' : '🤖';
-                        const preview = foundMsg.clean_content.substring(0, 150);
-                        console.log(`   ${i + 1}. [${r.similarity.toFixed(3)}] ${role} ${preview}${foundMsg.clean_content.length > 150 ? '...' : ''}`);
-                    } else {
-                        console.log(`   ${i + 1}. [${r.similarity.toFixed(3)}] Chat: ${r.chat_id} | Msg: ${cleanMessageId} | [текст не найден]`);
-                    }
-                    
-                } else if (recordType === 2) {
-                    // ─── КНИГА ─────────────────────────────────
-                    const chunk = getBookChunk(r.book_id, r.chunk_index);
-                    
-                    if (chunk) {
-                        const preview = chunk.text.substring(0, 150);
-                        console.log(`   ${i + 1}. [${r.similarity.toFixed(3)}] 📖 "${chunk.book_title}"`);
-                        console.log(`      ${preview}${chunk.text.length > 150 ? '...' : ''}`);
-                    } else {
-                        console.log(`   ${i + 1}. [${r.similarity.toFixed(3)}] Book: ${r.book_id} | Chunk: ${r.chunk_index} | [чанк не найден]`);
-                    }
-                    
-                } else {
-                    console.log(`   ${i + 1}. [${r.similarity.toFixed(3)}] Тип: НЕИЗВЕСТНЫЙ (${recordType})`);
-                }
-            }
-            console.log('────────────────────────────────────────────────────────\n');
-        }
+        // если нашли похожие то выводим их в консоль
+        await searchSimilarMessages(message, 3);
 
         // отправляем ответ клиенту
         res.json({ 

@@ -1,4 +1,13 @@
-models/
-llama.cpp/
-chatHistory.json
+# === Node.js зависимости ===
 node_modules/
+package-lock.json
+.eslintcache
+
+# === Локальные базы данных и логи ===
+db/*.db
+logs/
+src/logs/
+generated/
+
+# Временные текстовые файлы
+newBook.txt

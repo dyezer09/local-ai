@@ -1,4 +1,3 @@
-// booksDb.js — работа с базой данных книг (ESM)
 import Database from 'better-sqlite3';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -8,12 +7,12 @@ const __dirname = path.dirname(__filename);
 
 const dbPath =path.resolve(__dirname, '..', 'db',  'books.db');
 
-// Инициализация базы данных
+
 const db = new Database(dbPath);
 db.pragma('journal_mode = DELETE'); // обычный режим журналирования
 db.pragma('foreign_keys = ON'); // включаем внешние ключи
 
-// Создание таблиц
+// cоздание таблиц
 db.exec(`
     CREATE TABLE IF NOT EXISTS books (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -46,7 +45,7 @@ db.exec(`
 function addBook(title, filename, author = null) {
     const stmt = db.prepare('INSERT OR IGNORE INTO books (title, filename, author) VALUES (?, ?, ?)');
     const result = stmt.run(title, filename, author);
-    // если книга уже была — возвращаем её id
+    //  возвращаем id еди книга была
     return result.lastInsertRowid || getBookByTitle(title)?.id;
 }
 
@@ -60,12 +59,12 @@ function getBookById(id) {
     return db.prepare('SELECT * FROM books WHERE id = ?').get(id);
 }
 
-// список всех книг (свежие сверху)
+// список всех книг 
 function getAllBooks() {
     return db.prepare('SELECT * FROM books ORDER BY loaded_at DESC').all();
 }
 
-// удаляем книгу и все её чанки (каскадно)
+// удаляем книгу и все её чанки 
 function deleteBook(id) {
     db.prepare('DELETE FROM books WHERE id = ?').run(id);
 }

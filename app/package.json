@@ -9,7 +9,9 @@
     "generate": "flatc --js --js-module -o app/src/generated schemas/schema.fbs",
     "generate:cpp": "flatc --cpp -o cpp_server/generated schemas/schema.fbs",
     "generate:all": "npm run generate && npm run generate:cpp",
-    "clean": "rm -rf app/src/generated/* cpp_server/generated/*"
+    "clean": "rm -rf app/src/generated/* cpp_server/generated/*",
+    "build:css": "sass public/scss/style.scss public/style.css",
+    "watch:css": "sass --watch public/scss/style.scss public/style.css"
   },
   "keywords": [],
   "author": "",
@@ -33,6 +35,8 @@
   "homepage": "https://github.com/dyezer09/local-ai#readme",
   "devDependencies": {
     "@types/node": "^26.1.1",
+    "bootstrap": "^5.3.8",
+    "sass": "^1.77.8",
     "ts-node": "^10.9.2",
     "tsx": "^4.23.1"
   }
